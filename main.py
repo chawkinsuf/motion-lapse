@@ -1,23 +1,15 @@
 #! /usr/bin/python
 from __future__ import print_function
-import time, os, sys, threading, logging
+import time, os, sys, signal, threading, logging
 import Tkinter
-import numpy
+import numpy, scipy, scipy.stats, scipy.misc, skimage
 import app.setup
 
 from pprint import pprint
 from path import path
 from datetime import datetime
 from PIL import Image, ImageTk
-from scipy import sum, average
-from scipy.misc import imread
-from scipy.linalg import norm
-from scipy.stats import threshold
-from scipy.signal.signaltools import correlate, correlate2d
-from skimage import io, filter, exposure, color
 from random import random
-
-import signal, subprocess, cStringIO
 
 
 # Make a quick function to get the current time with microseconds
@@ -102,11 +94,11 @@ class VisionThread( threading.Thread ):
 		diff = abs( image - self.previous )
 
 		# Theshold the image so we only look at sufficiently different pixels
-		thresh = threshold( diff, threshmin=0.1, newval=0 )
-		thresh = threshold( thresh, threshmax=0.1, newval=1 )
+		thresh = scipy.stats.threshold( diff, threshmin=0.1, newval=0 )
+		thresh = scipy.stats.threshold( thresh, threshmax=0.1, newval=1 )
 
 		# Total the changed pixels
-		total = sum( thresh )
+		total = scipy.sum( thresh )
 
 		# Log the runtime
 		end_time = time.time()
@@ -134,7 +126,7 @@ class VisionThread( threading.Thread ):
 		grayscale = config.get( 'ALGORITHM', 'grayscale' )
 
 		if grayscale == 'average':
-			return average( image, -1 ) / 255.
+			return scipy.average( image, -1 ) / 255.
 
 		elif grayscale == 'luminance':
 			return color.rgb2gray( image )
@@ -156,7 +148,7 @@ class VisionThread( threading.Thread ):
 			return ( image - image.mean() ) / image.std()
 
 		elif normalize == 'histogram':
-			return exposure.equalize_hist( image )
+			return skimage.exposure.equalize_hist( image )
 
 		else:
 			exitmain = True
@@ -189,7 +181,7 @@ class CaptureThread( threading.Thread ):
 			# Load the image
 			filename = self.image_files.pop().abspath()
 			logging.info( 'Showing image ' + filename )
-			self.data.new_image( imread( filename ) )
+			self.data.new_image( scipy.misc.imread( filename ) )
 
 			# Yeild the thread
 			time.sleep(0.1)
