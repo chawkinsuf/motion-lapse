@@ -1,15 +1,14 @@
 #! /usr/bin/python
 from __future__ import print_function
 import time, os, sys, signal, threading, logging
-import Tkinter
 import numpy, scipy, scipy.stats, scipy.misc, skimage
+import Tkinter
 import app.setup
 
 from pprint import pprint
 from path import path
 from datetime import datetime
 from PIL import Image, ImageTk
-from random import random
 
 
 # Make a quick function to get the current time with microseconds
