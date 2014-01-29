@@ -74,4 +74,4 @@ def log( args ):
 
 	# Configure the logger
 	loglevel = LOG_LEVELS[ args.loglevel ]
-	logging.basicConfig( level=loglevel, stream=args.logfile, format='[%(asctime)s] %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S' )
+	logging.basicConfig( level=loglevel, stream=args.logfile, format='\033[1;30m[%(asctime)s]\033[0m %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S' )
