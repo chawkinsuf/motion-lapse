@@ -102,8 +102,9 @@ class VisionThread( threading.Thread ):
 		# Log the runtime
 		end_time = time.time()
 
-		logging.info( 'Detected %d changed pixels ' % total )
-		logging.info( 'Processing time: %.3f ms' % ( 1000*(end_time - start_time) ) )
+		color = '\033[1;32m' if ( total > 80 ) else '\033[1;31m'
+		logging.info( 'Detected %s%d\033[0m changed pixels ' % ( color, total ) )
+		logging.info( 'Processing time: \033[1;34m%.3f\033[0m ms' % ( 1000*(end_time - start_time) ) )
 
 		# Show the images
 		self.show_image( image, 0 )
