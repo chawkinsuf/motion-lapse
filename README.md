@@ -32,4 +32,5 @@ sudo pip install scipy
 sudo pip install scikit-image
 sudo pip install matplotlib
 sudo pip install path.py
+sudo pip install picamera
 ```
