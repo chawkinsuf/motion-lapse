@@ -1,6 +1,6 @@
 #! /usr/bin/python
 from __future__ import print_function
-import time, os, sys, signal, threading, logging
+import time, os, io, sys, signal, threading, logging
 import numpy, scipy, scipy.stats, scipy.misc, skimage
 import Tkinter
 import app.setup
@@ -157,6 +157,7 @@ class VisionThread( threading.Thread ):
 
 class CaptureThread( threading.Thread ):
 	def __init__( self, data ):
+		global exitmain, args
 
 		# Call the parent
 		threading.Thread.__init__( self )
@@ -165,23 +166,62 @@ class CaptureThread( threading.Thread ):
 		self.data = data
 
 		# Get the image list
-		self.image_files = path('test-images').files('image*.jpg')
-		self.image_files.sort( reverse = True )
+		if args.testimages is not None:
+
+			# Load the test images and check for problems
+			try:
+				self.image_files = path( args.testimages ).files('image*.jpg')
+			except:
+				logging.critical('There was a problem opening the test image directory')
+				exitmain = True
+				return
+
+			# Make sure we got some images
+			if len( self.image_files ) == 0:
+				logging.critical('No test images were found. Exiting.')
+				exitmain = True
+				return
+
+			# This makes images labeled with numbers process in order: 00, 01, 02, etc
+			self.image_files.sort( reverse = True )
 
 	def run( self ):
+		if 'picamera' in sys.modules:
+			with picamera.PiCamera() as camera:
+				self._capture( camera )
+		else:
+			self._capture( None )
+
+	def _capture( self, camera ):
 		global exitmain
+
+		# Initialize the camera
+		if camera is not None:
+			stream = io.BytesIO()
+			camera.resolution = ( 200, 150 )
+			camera.start_preview()
+
+		# Exit when we are signaled to
 		while  exitmain is False:
 
 			# Taking a picture
 			logging.info('Capturing detection image')
 
-			# Simulate time to take picture
+			# Wait for the next image
 			time.sleep(2)
 
-			# Load the image
-			filename = self.image_files.pop().abspath()
-			logging.info( 'Showing image ' + filename )
-			self.data.new_image( scipy.misc.imread( filename ) )
+			# Capture an image from the camera
+			if camera is not None:
+				stream.seek(0)
+				camera.capture( stream, format = 'jpeg' )
+				stream.seek(0)
+				self.data.new_image( scipy.misc.imread( stream ) )
+
+			# Or load the image from disk
+			else:
+				filename = self.image_files.pop().abspath()
+				logging.info( 'Showing image ' + filename )
+				self.data.new_image( scipy.misc.imread( filename ) )
 
 			# Yeild the thread
 			time.sleep(0.1)
@@ -225,6 +265,11 @@ def main():
 
 	# Process the config file
 	config = app.setup.config( args )
+
+	# Only import picamera if we are going to use it
+	if args.testimages is None:
+		global picamera
+		import picamera
 
 	# Make a directory for our images
 	os.makedirs( IMAGE_DIR )
